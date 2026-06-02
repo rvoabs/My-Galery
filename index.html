@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -124,7 +125,7 @@
 
   <div class="custom-gallery-container">
     <div class="custom-gallery" id="gallery">
-      </div>
+    </div>
   </div>
 
   <div class="lightbox-overlay" id="lightbox" onclick="this.style.display='none'">
@@ -136,10 +137,8 @@
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
 
-    // Lightbox Event-Listener (wird später für dynamische Bilder genutzt)
     function initLightbox() {
       document.querySelectorAll('.gallery-item img').forEach(img => {
-        img.removeAttribute('onclick'); // Altes entfernen falls vorhanden
         img.addEventListener('click', () => {
           lightboxImg.src = img.src;
           lightbox.style.display = 'flex';
@@ -147,14 +146,10 @@
       });
     }
 
-    // Holt sich automatisch alle Dateien aus deinem GitHub-Ordner
     async function loadGallery() {
       try {
-        // Nutzt die öffentliche GitHub-API deines Projekts
         const response = await fetch('https://api.github.com/repos/rvoabs/My-Galery/contents/');
         const files = await response.json();
-        
-        // Filtert nur .jpg und .jpeg Dateien heraus
         const imageFiles = files.filter(file => 
           file.name.toLowerCase().endsWith('.jpg') || 
           file.name.toLowerCase().endsWith('.jpeg')
@@ -168,14 +163,11 @@
         imageFiles.forEach(file => {
           const item = document.createElement('div');
           item.className = 'gallery-item';
-          
           const img = document.createElement('img');
           img.src = file.name;
-          
           const infoDiv = document.createElement('div');
           infoDiv.className = 'exif-info';
           infoDiv.innerText = "Lade Bilddaten...";
-          
           item.appendChild(img);
           item.appendChild(infoDiv);
           gallery.appendChild(item);
@@ -183,23 +175,25 @@
 
           function processImage() {
             EXIF.getData(img, function() {
+              const exifDateRaw = EXIF.getTag(this, "DateTimeOriginal") || EXIF.getTag(this, "DateTime") || "0000:00:00 00:00:00";
+              
+              // Korrigiertes Format für die datenbasierte Sortierung (JJJJ:MM:DD HH:MM:SS)
+              item.setAttribute('data-timestamp', exifDateRaw);
+
+              // Hübsches Anzeigeformat (TT.MM.JJJJ)
+              let displayDate = "";
+              if (exifDateRaw && exifDateRaw !== "0000:00:00 00:00:00") {
+                const parts = exifDateRaw.split(' ')[0].split(':');
+                if (parts.length === 3) displayDate = `${parts[2]}.${parts[1]}.${parts[0]} | `;
+              }
+
               const model = EXIF.getTag(this, "Model") || "";
               const fNumber = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "";
               const iso = EXIF.getTag(this, "ISOSpeedRatings") ? "ISO " + EXIF.getTag(this, "ISOSpeedRatings") : "";
               const shutter = EXIF.getTag(this, "ExposureTime");
-              const exifDate = EXIF.getTag(this, "DateTimeOriginal") || EXIF.getTag(this, "DateTime") || "";
-              
-              item.setAttribute('data-timestamp', exifDate);
-
               let shutterStr = "";
               if (shutter) {
                 shutterStr = shutter >= 1 ? shutter + "s" : "1/" + Math.round(1/shutter) + "s";
-              }
-
-              let displayDate = "";
-              if (exifDate) {
-                const parts = exifDate.split(' ')[0].split(':');
-                if (parts.length === 3) displayDate = `${parts[2]}.${parts[1]}.${parts[0]} | `;
               }
 
               const specs = [model, fNumber, shutterStr, iso].filter(Boolean).join(' | ');
@@ -212,14 +206,12 @@
           function checkAndSort() {
             processedCount++;
             if (processedCount === imageFiles.length) {
-              // Sortiert alle gefundenen Bilder nach EXIF-Datum (neu zu alt)
               itemsArray.sort((a, b) => {
-                const dateA = a.getAttribute('data-timestamp') || '';
-                const dateB = b.getAttribute('data-timestamp') || '';
-                return dateB.localeCompare(dateA);
+                const dateA = a.getAttribute('data-timestamp') || '0000:00:00 00:00:00';
+                const dateB = b.getAttribute('data-timestamp') || '0000:00:00 00:00:00';
+                return dateB.localeCompare(dateA); // Neueste zuerst
               });
               
-              // Sortierte Bilder ins Raster hängen und einblenden
               itemsArray.forEach(el => {
                 gallery.appendChild(el);
                 el.style.opacity = "1";
@@ -228,21 +220,18 @@
             }
           }
 
-          if (img.complete) {
-            processImage();
-          } else {
-            img.addEventListener('load', processImage);
-            img.addEventListener('error', checkAndSort);
-          }
+          if (img.complete) { processImage(); } 
+          else { img.addEventListener('load', processImage); img.addEventListener('error', checkAndSort); }
         });
 
-      } catch (error) {
-        console.error("Fehler beim Laden der Bilderliste:", error);
-      }
+      } catch (error) { console.error("Fehler:", error); }
     }
 
     window.addEventListener('load', loadGallery);
   </script>
-
 </body>
 </html>
+
+
+```
+
