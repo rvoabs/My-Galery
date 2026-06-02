@@ -1,0 +1,135 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+
+<style>
+  /* Minimalistisches, weißes Design */
+  .custom-gallery-container {
+    background-color: #ffffff;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  
+  /* Puzzle / Masonry Layout mit CSS Columns */
+  .custom-gallery {
+    column-count: 3;
+    column-gap: 15px;
+  }
+  
+  @media (max-width: 900px) { .custom-gallery { column-count: 2; } }
+  @media (max-width: 600px) { .custom-gallery { column-count: 1; } }
+
+  .gallery-item {
+    background: #ffffff;
+    margin-bottom: 15px;
+    break-inside: avoid;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  
+  .gallery-item img:hover {
+    opacity: 0.9;
+  }
+
+  /* Bildunterschrift für EXIF-Daten */
+  .exif-info {
+    font-size: 11px;
+    color: #666666;
+    margin-top: 6px;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+
+  /* Lightbox / Vollbild-Ansicht */
+  .lightbox-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    cursor: zoom-out;
+  }
+
+  .lightbox-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+</style>
+
+<div class="custom-gallery-container">
+  <div class="custom-gallery" id="gallery">
+    
+    <div class="gallery-item">
+      <img src="https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=800" crossorigin="anonymous">
+      <div class="exif-info">Lade EXIF-Daten...</div>
+    </div>
+    
+    <div class="gallery-item">
+      <img src="https://images.unsplash.com/photo-1554080353-a576cf803bda?w=800" crossorigin="anonymous">
+      <div class="exif-info">Lade EXIF-Daten...</div>
+    </div>
+
+    <div class="gallery-item">
+      <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800" crossorigin="anonymous">
+      <div class="exif-info">Lade EXIF-Daten...</div>
+    </div>
+    </div>
+</div>
+
+<div class="lightbox-overlay" id="lightbox" onclick="this.style.display='none'">
+  <img id="lightbox-img" src="">
+</div>
+
+<script>
+  // Lightbox Logik
+  const galleryImages = document.querySelectorAll('.gallery-item img');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+
+  galleryImages.forEach(img => {
+    img.addEventListener('click', () => {
+      lightboxImg.src = img.src;
+      lightbox.style.display = 'flex';
+    });
+  });
+
+  // EXIF-Daten automatisch auslesen
+  window.addEventListener('load', () => {
+    galleryImages.forEach(img => {
+      img.addEventListener('load', function() {
+        EXIF.getData(img, function() {
+          const make = EXIF.getTag(this, "Make") || "";
+          const model = EXIF.getTag(this, "Model") || "";
+          const fNumber = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "";
+          const iso = EXIF.getTag(this, "ISOSpeedRatings") ? "ISO " + EXIF.getTag(this, "ISOSpeedRatings") : "";
+          const shutter = EXIF.getTag(this, "ExposureTime");
+          
+          let shutterStr = "";
+          if (shutter) {
+            shutterStr = shutter >= 1 ? shutter + "s" : "1/" + Math.round(1/shutter) + "s";
+          }
+
+          const infoDiv = this.nextElementSibling;
+          const specs = [model, fNumber, shutterStr, iso].filter(Boolean).join(' | ');
+          
+          if (specs) {
+            infoDiv.innerText = specs;
+          } else {
+            infoDiv.innerText = "Keine EXIF-Daten gefunden";
+          }
+        });
+      });
+      // Falls das Bild schon geladen war
+      if (img.complete) img.dispatchEvent(new Event('load'));
+    });
+  });
+</script>
