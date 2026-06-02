@@ -48,7 +48,6 @@
       padding: 0 10px 40px 10px;
     }
     
-    /* 3-Spalten-Raster für alle Geräte */
     .custom-gallery {
       column-count: 3;
       column-gap: 12px;
@@ -86,33 +85,14 @@
       letter-spacing: 0.3px;
     }
 
-    /* Optimierungen für Mobilgeräte (Handys) */
     @media (max-width: 600px) {
-      header {
-        padding: 30px 15px 5px 15px;
-      }
-      header h1 {
-        font-size: 26px;
-        letter-spacing: 3px;
-      }
-      .qr-container {
-        margin-bottom: 20px;
-      }
-      .qr-container img {
-        width: 80px;
-        height: 80px;
-      }
-      .custom-gallery {
-        column-gap: 6px; /* Engere Abstände auf dem Handy */
-      }
-      .gallery-item {
-        margin-bottom: 6px;
-      }
-      .exif-info {
-        font-size: 8px; /* Kleinere Schrift, damit es auf Mobilgeräten passt */
-        margin-top: 3px;
-        margin-bottom: 6px;
-      }
+      header { padding: 30px 15px 5px 15px; }
+      header h1 { font-size: 26px; letter-spacing: 3px; }
+      .qr-container { margin-bottom: 20px; }
+      .qr-container img { width: 80px; height: 80px; }
+      .custom-gallery { column-gap: 6px; }
+      .gallery-item { margin-bottom: 6px; }
+      .exif-info { font-size: 8px; margin-top: 3px; margin-bottom: 6px; }
     }
 
     .lightbox-overlay {
@@ -144,85 +124,7 @@
 
   <div class="custom-gallery-container">
     <div class="custom-gallery" id="gallery">
-      
-      <!-- HIER DEINE BILDER EINTRAGEN -->
-      <div class="gallery-item">
-        <img src="foto1.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
       </div>
-
-      <div class="gallery-item">
-        <img src="foto2.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-      
-       <div class="gallery-item">
-        <img src="foto3.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto4.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto5.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto6.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto7.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto8.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto9.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto10.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto11.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto12.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto13.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto14.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-
-      <div class="gallery-item">
-        <img src="foto15.jpg">
-        <div class="exif-info">Lade Bilddaten...</div>
-      </div>
-      <!-- Ende der Bilderliste -->
-
-    </div>
   </div>
 
   <div class="lightbox-overlay" id="lightbox" onclick="this.style.display='none'">
@@ -230,80 +132,116 @@
   </div>
 
   <script>
-    // Lightbox Code
+    const gallery = document.getElementById('gallery');
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
 
-    document.querySelectorAll('.gallery-item img').forEach(img => {
-      img.addEventListener('click', () => {
-        lightboxImg.src = img.src;
-        lightbox.style.display = 'flex';
+    // Lightbox Event-Listener (wird später für dynamische Bilder genutzt)
+    function initLightbox() {
+      document.querySelectorAll('.gallery-item img').forEach(img => {
+        img.removeAttribute('onclick'); // Altes entfernen falls vorhanden
+        img.addEventListener('click', () => {
+          lightboxImg.src = img.src;
+          lightbox.style.display = 'flex';
+        });
       });
-    });
+    }
 
-    // EXIF-Daten auslesen und sortieren
-    window.addEventListener('load', () => {
-      const gallery = document.getElementById('gallery');
-      const items = Array.from(gallery.getElementsByClassName('gallery-item'));
-      let processedCount = 0;
+    // Holt sich automatisch alle Dateien aus deinem GitHub-Ordner
+    async function loadGallery() {
+      try {
+        // Nutzt die öffentliche GitHub-API deines Projekts
+        const response = await fetch('https://api.github.com/repos/rvoabs/My-Galery/contents/');
+        const files = await response.json();
+        
+        // Filtert nur .jpg und .jpeg Dateien heraus
+        const imageFiles = files.filter(file => 
+          file.name.toLowerCase().endsWith('.jpg') || 
+          file.name.toLowerCase().endsWith('.jpeg')
+        );
 
-      items.forEach(item => {
-        const img = item.querySelector('img');
+        if(imageFiles.length === 0) return;
 
-        function processImage() {
-          EXIF.getData(img, function() {
-            const model = EXIF.getTag(this, "Model") || "";
-            const fNumber = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "";
-            const iso = EXIF.getTag(this, "ISOSpeedRatings") ? "ISO " + EXIF.getTag(this, "ISOSpeedRatings") : "";
-            const shutter = EXIF.getTag(this, "ExposureTime");
-            const exifDate = EXIF.getTag(this, "DateTimeOriginal") || EXIF.getTag(this, "DateTime") || "";
-            
-            item.setAttribute('data-timestamp', exifDate);
+        let processedCount = 0;
+        const itemsArray = [];
 
-            let shutterStr = "";
-            if (shutter) {
-              shutterStr = shutter >= 1 ? shutter + "s" : "1/" + Math.round(1/shutter) + "s";
-            }
+        imageFiles.forEach(file => {
+          const item = document.createElement('div');
+          item.className = 'gallery-item';
+          
+          const img = document.createElement('img');
+          img.src = file.name;
+          
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'exif-info';
+          infoDiv.innerText = "Lade Bilddaten...";
+          
+          item.appendChild(img);
+          item.appendChild(infoDiv);
+          gallery.appendChild(item);
+          itemsArray.push(item);
 
-            let displayDate = "";
-            if (exifDate) {
-              const parts = exifDate.split(' ')[0].split(':');
-              if (parts.length === 3) displayDate = `${parts[2]}.${parts[1]}.${parts[0]} | `;
-            }
+          function processImage() {
+            EXIF.getData(img, function() {
+              const model = EXIF.getTag(this, "Model") || "";
+              const fNumber = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "";
+              const iso = EXIF.getTag(this, "ISOSpeedRatings") ? "ISO " + EXIF.getTag(this, "ISOSpeedRatings") : "";
+              const shutter = EXIF.getTag(this, "ExposureTime");
+              const exifDate = EXIF.getTag(this, "DateTimeOriginal") || EXIF.getTag(this, "DateTime") || "";
+              
+              item.setAttribute('data-timestamp', exifDate);
 
-            const infoDiv = img.nextElementSibling;
-            const specs = [model, fNumber, shutterStr, iso].filter(Boolean).join(' | ');
-            infoDiv.innerText = displayDate + (specs || "Keine Kamera-Details");
+              let shutterStr = "";
+              if (shutter) {
+                shutterStr = shutter >= 1 ? shutter + "s" : "1/" + Math.round(1/shutter) + "s";
+              }
 
-            checkAndSort();
-          });
-        }
+              let displayDate = "";
+              if (exifDate) {
+                const parts = exifDate.split(' ')[0].split(':');
+                if (parts.length === 3) displayDate = `${parts[2]}.${parts[1]}.${parts[0]} | `;
+              }
 
-        function checkAndSort() {
-          processedCount++;
-          if (processedCount === items.length) {
-            // Sortieren von neu nach alt
-            items.sort((a, b) => {
-              const dateA = a.getAttribute('data-timestamp') || '';
-              const dateB = b.getAttribute('data-timestamp') || '';
-              return dateB.localeCompare(dateA);
-            });
-            // Neu anordnen und sichtbar machen
-            items.forEach(el => {
-              gallery.appendChild(el);
-              el.style.opacity = "1";
+              const specs = [model, fNumber, shutterStr, iso].filter(Boolean).join(' | ');
+              infoDiv.innerText = displayDate + (specs || "Keine Kamera-Details");
+
+              checkAndSort();
             });
           }
-        }
 
-        if (img.complete) {
-          processImage();
-        } else {
-          img.addEventListener('load', processImage);
-          img.addEventListener('error', checkAndSort);
-        }
-      });
-    });
+          function checkAndSort() {
+            processedCount++;
+            if (processedCount === imageFiles.length) {
+              // Sortiert alle gefundenen Bilder nach EXIF-Datum (neu zu alt)
+              itemsArray.sort((a, b) => {
+                const dateA = a.getAttribute('data-timestamp') || '';
+                const dateB = b.getAttribute('data-timestamp') || '';
+                return dateB.localeCompare(dateA);
+              });
+              
+              // Sortierte Bilder ins Raster hängen und einblenden
+              itemsArray.forEach(el => {
+                gallery.appendChild(el);
+                el.style.opacity = "1";
+              });
+              initLightbox();
+            }
+          }
+
+          if (img.complete) {
+            processImage();
+          } else {
+            img.addEventListener('load', processImage);
+            img.addEventListener('error', checkAndSort);
+          }
+        });
+
+      } catch (error) {
+        console.error("Fehler beim Laden der Bilderliste:", error);
+      }
+    }
+
+    window.addEventListener('load', loadGallery);
   </script>
 
 </body>
