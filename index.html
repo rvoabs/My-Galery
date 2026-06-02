@@ -18,13 +18,13 @@
     header {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 60px 20px 20px 20px;
+      padding: 40px 20px 10px 20px;
       text-align: center;
     }
 
     header h1 {
-      margin: 0 0 20px 0;
-      font-size: 36px;
+      margin: 0 0 15px 0;
+      font-size: 32px;
       letter-spacing: 4px;
       text-transform: uppercase;
       font-weight: 300;
@@ -33,37 +33,35 @@
     .qr-container {
       display: flex;
       justify-content: center;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
     }
 
     .qr-container img {
-      width: 110px;
-      height: 110px;
+      width: 100px;
+      height: 100px;
       display: block;
     }
 
     .custom-gallery-container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 20px 40px 20px;
+      padding: 0 10px 40px 10px;
     }
     
+    /* 3-Spalten-Raster für alle Geräte */
     .custom-gallery {
       column-count: 3;
-      column-gap: 15px;
+      column-gap: 12px;
       display: block;
     }
-    
-    @media (max-width: 900px) { .custom-gallery { column-count: 2; } }
-    @media (max-width: 600px) { .custom-gallery { column-count: 1; } }
 
     .gallery-item {
       background: #ffffff;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       break-inside: avoid;
       display: flex;
       flex-direction: column;
-      opacity: 0; /* Wird erst sichtbar, wenn sortiert */
+      opacity: 0;
       transition: opacity 0.3s ease;
     }
 
@@ -80,12 +78,41 @@
     }
 
     .exif-info {
-      font-size: 11px;
+      font-size: 10px;
       color: #666666;
-      margin-top: 6px;
-      margin-bottom: 12px;
-      line-height: 1.4;
-      letter-spacing: 0.5px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      line-height: 1.3;
+      letter-spacing: 0.3px;
+    }
+
+    /* Optimierungen für Mobilgeräte (Handys) */
+    @media (max-width: 600px) {
+      header {
+        padding: 30px 15px 5px 15px;
+      }
+      header h1 {
+        font-size: 26px;
+        letter-spacing: 3px;
+      }
+      .qr-container {
+        margin-bottom: 20px;
+      }
+      .qr-container img {
+        width: 80px;
+        height: 80px;
+      }
+      .custom-gallery {
+        column-gap: 6px; /* Engere Abstände auf dem Handy */
+      }
+      .gallery-item {
+        margin-bottom: 6px;
+      }
+      .exif-info {
+        font-size: 8px; /* Kleinere Schrift, damit es auf Mobilgeräten passt */
+        margin-top: 3px;
+        margin-bottom: 6px;
+      }
     }
 
     .lightbox-overlay {
@@ -100,8 +127,8 @@
     }
 
     .lightbox-overlay img {
-      max-width: 90%;
-      max-height: 90%;
+      max-width: 92%;
+      max-height: 92%;
       box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
   </style>
@@ -118,6 +145,7 @@
   <div class="custom-gallery-container">
     <div class="custom-gallery" id="gallery">
       
+      <!-- HIER DEINE BILDER EINTRAGEN -->
       <div class="gallery-item">
         <img src="foto1.jpg">
         <div class="exif-info">Lade Bilddaten...</div>
@@ -127,7 +155,9 @@
         <img src="foto2.jpg">
         <div class="exif-info">Lade Bilddaten...</div>
       </div>
-      </div>
+      <!-- Ende der Bilderliste -->
+
+    </div>
   </div>
 
   <div class="lightbox-overlay" id="lightbox" onclick="this.style.display='none'">
@@ -205,7 +235,7 @@
           processImage();
         } else {
           img.addEventListener('load', processImage);
-          img.addEventListener('error', checkAndSort); // Falls ein Bildpfad falsch ist
+          img.addEventListener('error', checkAndSort);
         }
       });
     });
