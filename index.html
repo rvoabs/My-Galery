@@ -48,11 +48,10 @@
       padding: 0 20px 40px 20px;
     }
     
-    /* 3-Spalten-Raster für das Nebeneinander-Anzeigen */
     .custom-gallery {
       column-count: 3;
       column-gap: 15px;
-      display: block; /* Stellt sicher, dass das Spalten-Layout greift */
+      display: block;
     }
     
     @media (max-width: 900px) { .custom-gallery { column-count: 2; } }
@@ -64,6 +63,8 @@
       break-inside: avoid;
       display: flex;
       flex-direction: column;
+      opacity: 0; /* Wird erst sichtbar, wenn sortiert */
+      transition: opacity 0.3s ease;
     }
 
     .gallery-item img {
@@ -118,12 +119,12 @@
     <div class="custom-gallery" id="gallery">
       
       <div class="gallery-item">
-        <img src="foto1.jpg" crossorigin="anonymous">
+        <img src="foto1.jpg">
         <div class="exif-info">Lade Bilddaten...</div>
       </div>
 
       <div class="gallery-item">
-        <img src="foto2.jpg" crossorigin="anonymous">
+        <img src="foto2.jpg">
         <div class="exif-info">Lade Bilddaten...</div>
       </div>
       </div>
@@ -145,7 +146,7 @@
       });
     });
 
-    // EXIF-Daten auslesen und Galerie danach sortieren
+    // EXIF-Daten auslesen und sortieren
     window.addEventListener('load', () => {
       const gallery = document.getElementById('gallery');
       const items = Array.from(gallery.getElementsByClassName('gallery-item'));
@@ -154,54 +155,59 @@
       items.forEach(item => {
         const img = item.querySelector('img');
 
-        img.addEventListener('load', function() {
+        function processImage() {
           EXIF.getData(img, function() {
-            // Metadaten auslesen
             const model = EXIF.getTag(this, "Model") || "";
             const fNumber = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "";
             const iso = EXIF.getTag(this, "ISOSpeedRatings") ? "ISO " + EXIF.getTag(this, "ISOSpeedRatings") : "";
             const shutter = EXIF.getTag(this, "ExposureTime");
-            
-            // Aufnahmedatum auslesen (Format ist meist "YYYY:MM:DD HH:MM:SS")
             const exifDate = EXIF.getTag(this, "DateTimeOriginal") || EXIF.getTag(this, "DateTime") || "";
-            item.setAttribute('data-timestamp', exifDate); // Für die spätere Sortierung speichern
+            
+            item.setAttribute('data-timestamp', exifDate);
 
             let shutterStr = "";
             if (shutter) {
               shutterStr = shutter >= 1 ? shutter + "s" : "1/" + Math.round(1/shutter) + "s";
             }
 
-            // Datum hübsch formatieren für die Anzeige unter dem Bild
             let displayDate = "";
             if (exifDate) {
               const parts = exifDate.split(' ')[0].split(':');
               if (parts.length === 3) displayDate = `${parts[2]}.${parts[1]}.${parts[0]} | `;
             }
 
-            const infoDiv = this.nextElementSibling;
+            const infoDiv = img.nextElementSibling;
             const specs = [model, fNumber, shutterStr, iso].filter(Boolean).join(' | ');
             infoDiv.innerText = displayDate + (specs || "Keine Kamera-Details");
 
-            // Prüfen, ob alle Bilder eingelesen wurden, dann sortieren
-            processedCount++;
-            if (processedCount === items.length) {
-              sortGallery();
-            }
+            checkAndSort();
           });
-        });
+        }
 
-        if (img.complete) img.dispatchEvent(new Event('load'));
+        function checkAndSort() {
+          processedCount++;
+          if (processedCount === items.length) {
+            // Sortieren von neu nach alt
+            items.sort((a, b) => {
+              const dateA = a.getAttribute('data-timestamp') || '';
+              const dateB = b.getAttribute('data-timestamp') || '';
+              return dateB.localeCompare(dateA);
+            });
+            // Neu anordnen und sichtbar machen
+            items.forEach(el => {
+              gallery.appendChild(el);
+              el.style.opacity = "1";
+            });
+          }
+        }
+
+        if (img.complete) {
+          processImage();
+        } else {
+          img.addEventListener('load', processImage);
+          img.addEventListener('error', checkAndSort); // Falls ein Bildpfad falsch ist
+        }
       });
-
-      // Funktion zur Sortierung von neu nach alt
-      function sortGallery() {
-        items.sort((a, b) => {
-          const dateA = a.getAttribute('data-timestamp') || '';
-          const dateB = b.getAttribute('data-timestamp') || '';
-          return dateB.localeCompare(dateA); // Neueste zuerst
-        });
-        items.forEach(item => gallery.appendChild(item));
-      }
     });
   </script>
 
