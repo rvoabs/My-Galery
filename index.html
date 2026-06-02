@@ -42,16 +42,17 @@
       display: block;
     }
 
-    /* Das Raster für das Nebeneinander-Anzeigen */
     .custom-gallery-container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 20px 40px 20px;
     }
     
+    /* 3-Spalten-Raster für das Nebeneinander-Anzeigen */
     .custom-gallery {
       column-count: 3;
       column-gap: 15px;
+      display: block; /* Stellt sicher, dass das Spalten-Layout greift */
     }
     
     @media (max-width: 900px) { .custom-gallery { column-count: 2; } }
@@ -116,14 +117,14 @@
   <div class="custom-gallery-container">
     <div class="custom-gallery" id="gallery">
       
-      <div class="gallery-item" data-date="2026-06-02">
+      <div class="gallery-item">
         <img src="foto1.jpg" crossorigin="anonymous">
-        <div class="exif-info">Lade EXIF-Daten...</div>
+        <div class="exif-info">Lade Bilddaten...</div>
       </div>
 
-      <div class="gallery-item" data-date="2026-05-20">
+      <div class="gallery-item">
         <img src="foto2.jpg" crossorigin="anonymous">
-        <div class="exif-info">Lade EXIF-Daten...</div>
+        <div class="exif-info">Lade Bilddaten...</div>
       </div>
       </div>
   </div>
@@ -133,57 +134,74 @@
   </div>
 
   <script>
-    // Automatische Sortierung (Neu zu Alt) basierend auf dem "data-date" Attribut
-    const gallery = document.getElementById('gallery');
-    const items = Array.from(gallery.getElementsByClassName('gallery-item'));
-    
-    items.sort((a, b) => {
-      const dateA = a.getAttribute('data-date') || '';
-      const dateB = b.getAttribute('data-date') || '';
-      return dateB.localeCompare(dateA); // Sortiert absteigend
-    });
-    
-    items.forEach(item => gallery.appendChild(item));
-
     // Lightbox Code
-    const galleryImages = document.querySelectorAll('.gallery-item img');
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
 
-    galleryImages.forEach(img => {
+    document.querySelectorAll('.gallery-item img').forEach(img => {
       img.addEventListener('click', () => {
         lightboxImg.src = img.src;
         lightbox.style.display = 'flex';
       });
     });
 
-    // EXIF-Daten auslesen
+    // EXIF-Daten auslesen und Galerie danach sortieren
     window.addEventListener('load', () => {
-      galleryImages.forEach(img => {
+      const gallery = document.getElementById('gallery');
+      const items = Array.from(gallery.getElementsByClassName('gallery-item'));
+      let processedCount = 0;
+
+      items.forEach(item => {
+        const img = item.querySelector('img');
+
         img.addEventListener('load', function() {
           EXIF.getData(img, function() {
+            // Metadaten auslesen
             const model = EXIF.getTag(this, "Model") || "";
             const fNumber = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "";
             const iso = EXIF.getTag(this, "ISOSpeedRatings") ? "ISO " + EXIF.getTag(this, "ISOSpeedRatings") : "";
             const shutter = EXIF.getTag(this, "ExposureTime");
             
+            // Aufnahmedatum auslesen (Format ist meist "YYYY:MM:DD HH:MM:SS")
+            const exifDate = EXIF.getTag(this, "DateTimeOriginal") || EXIF.getTag(this, "DateTime") || "";
+            item.setAttribute('data-timestamp', exifDate); // Für die spätere Sortierung speichern
+
             let shutterStr = "";
             if (shutter) {
               shutterStr = shutter >= 1 ? shutter + "s" : "1/" + Math.round(1/shutter) + "s";
             }
 
+            // Datum hübsch formatieren für die Anzeige unter dem Bild
+            let displayDate = "";
+            if (exifDate) {
+              const parts = exifDate.split(' ')[0].split(':');
+              if (parts.length === 3) displayDate = `${parts[2]}.${parts[1]}.${parts[0]} | `;
+            }
+
             const infoDiv = this.nextElementSibling;
             const specs = [model, fNumber, shutterStr, iso].filter(Boolean).join(' | ');
-            
-            if (specs) {
-              infoDiv.innerText = specs;
-            } else {
-              infoDiv.innerText = "Keine EXIF-Daten gefunden";
+            infoDiv.innerText = displayDate + (specs || "Keine Kamera-Details");
+
+            // Prüfen, ob alle Bilder eingelesen wurden, dann sortieren
+            processedCount++;
+            if (processedCount === items.length) {
+              sortGallery();
             }
           });
         });
+
         if (img.complete) img.dispatchEvent(new Event('load'));
       });
+
+      // Funktion zur Sortierung von neu nach alt
+      function sortGallery() {
+        items.sort((a, b) => {
+          const dateA = a.getAttribute('data-timestamp') || '';
+          const dateB = b.getAttribute('data-timestamp') || '';
+          return dateB.localeCompare(dateA); // Neueste zuerst
+        });
+        items.forEach(item => gallery.appendChild(item));
+      }
     });
   </script>
 
