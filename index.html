@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RVOABS</title>
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js](https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js)"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
 
   <style>
     body {
@@ -48,7 +49,7 @@
       padding: 0 10px 40px 10px;
     }
     
-    /* Grid-Layout für echte Sortierung von links nach rechts */
+    /* Grid für exakte Sortierung von links nach rechts */
     .custom-gallery {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -85,7 +86,15 @@
       letter-spacing: 0.3px;
     }
 
-    /* Optimierungen für Mobilgeräte */
+    .error-msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px;
+      color: #888888;
+      font-size: 14px;
+    }
+
+    /* Mobilgeräte-Optimierung */
     @media (max-width: 600px) {
       header { padding: 30px 15px 5px 15px; }
       header h1 { font-size: 26px; letter-spacing: 3px; }
@@ -118,7 +127,7 @@
   <header>
     <h1>RVOABS</h1>
     <div class="qr-container">
-      <img src="[https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://rvoabs.de](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://rvoabs.de)" alt="QR Code">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://rvoabs.de" alt="QR Code">
     </div>
   </header>
 
@@ -147,14 +156,22 @@
 
     async function loadGallery() {
       try {
-        const response = await fetch('[https://api.github.com/repos/rvoabs/My-Galery/contents/](https://api.github.com/repos/rvoabs/My-Galery/contents/)');
+        const response = await fetch('https://api.github.com/repos/rvoabs/My-Galery/contents/');
+        
+        if (!response.ok) {
+          throw new Error("GitHub API Limit erreicht oder Fehler beim Abrufen.");
+        }
+
         const files = await response.json();
         const imageFiles = files.filter(file => 
           file.name.toLowerCase().endsWith('.jpg') || 
           file.name.toLowerCase().endsWith('.jpeg')
         );
 
-        if(imageFiles.length === 0) return;
+        if(imageFiles.length === 0) {
+          gallery.innerHTML = '<div class="error-msg">Keine Bilder im Ordner gefunden.</div>';
+          return;
+        }
 
         let processedCount = 0;
         const itemsArray = [];
@@ -208,7 +225,6 @@
                 return dateB.localeCompare(dateA); // Neueste zuerst
               });
               
-              // Leere die Galerie und füge die sortierten Elemente neu ein
               gallery.innerHTML = '';
               itemsArray.forEach(el => {
                 gallery.appendChild(el);
@@ -222,7 +238,10 @@
           else { img.addEventListener('load', processImage); img.addEventListener('error', checkAndSort); }
         });
 
-      } catch (error) { console.error("Fehler:", error); }
+      } catch (error) { 
+        console.error(error);
+        gallery.innerHTML = '<div class="error-msg">Bilder konnten nicht geladen werden. Bitte versuche es gleich noch einmal.</div>';
+      }
     }
 
     window.addEventListener('load', loadGallery);
